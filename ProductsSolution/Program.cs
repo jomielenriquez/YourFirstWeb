@@ -1,7 +1,20 @@
+// Include the necessary package and code
+using Microsoft.EntityFrameworkCore;
+using ProductsSolution.Data;
+using ProductsSolution.Interfaces;
+using ProductsSolution.Repositories;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// Add DbContext with SQL Server provider
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add repository dependency
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 var app = builder.Build();
 
