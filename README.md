@@ -616,3 +616,9 @@
         }
     }
     ```
+
+## Publish the site
+
+    ```bash
+    dotnet publish -c Release -o ./publish
+    ```
