@@ -14,7 +14,7 @@
     dotnet add package Microsoft.EntityFrameworkCore.Tools
     ```
 
- 3. Create `Models` folder and create Products.cs inside.
+ 3. Create `Models` folder and create `Products.cs` inside.
 
     ```cs
     // Models/Product.cs
@@ -112,6 +112,7 @@
 
     var builder = WebApplication.CreateBuilder(args);
 
+    // Add services to the container.
     builder.Services.AddControllersWithViews();
 
     // Add DbContext with SQL Server provider
@@ -122,6 +123,14 @@
     builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
     var app = builder.Build();
+
+    // Configure the HTTP request pipeline.
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseExceptionHandler("/Home/Error");
+        // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+        app.UseHsts();
+    }
 
     app.UseHttpsRedirection();
     app.UseStaticFiles();
@@ -139,6 +148,8 @@
 
     Also, add your connection string in `appsettings.json`:
 
+    NOTE: Change the `server_name` with your server name and the `database_name` with the database that you created
+
     ```json
     {
         "Logging": {
@@ -153,8 +164,64 @@
         }
     }
     ```
+ 7. Create a list screen
 
- 7. Apply Migration and Update Database
+    Step 1: Create `AppModel` folder and add ``App.cs`:
+
+    ```cs
+    // AppModel/App.cs
+    using ProductsSolution.Models;
+
+    namespace ProductsSolution.AppModels
+    {
+        public class App
+        {
+            public IEnumerable<Product> Products { get; set; }
+        }
+    }
+    ```
+
+    Step 2: Update your `HomeController.cs`
+
+    ```cs
+    using Microsoft.AspNetCore.Mvc;
+    using ProductsSolution.Interfaces;
+    using ProductsSolution.AppModels;
+
+    namespace ProductsSolution.Controllers;
+
+    public class HomeController : Controller
+    {
+        // Declare IProductrepository
+        private readonly IProductRepository productRepository;
+
+        // Injection
+        public HomeController(IProductRepository productRepository){
+            this.productRepository = productRepository;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            App app = new App();
+            app.Products = await this.productRepository.GetAllProducts();
+            return View(app);
+        }
+    }
+    ```
+
+    Step3: Update Index.cshtml
+    ```cshtml
+    @model ProductsSolution.AppModels.App;
+    @{
+        ViewData["Title"] = "Home Page";
+    }
+
+    @foreach(ProductsSolution.Models.Product product in Model.Products){
+        <h1>@product.Name</h1>
+    }
+    ```
+
+ 8. Apply Migration and Update Database
 
     install EF Core tools
 
