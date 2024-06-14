@@ -380,7 +380,7 @@
             // this is an interface to get all products
             Task<IEnumerable<Product>> GetAllProducts();
 
-            // Add Interface for deleting product
+            // Add Interface to Add new product
             Task AddProduct(Product product);
         }
     }
@@ -457,6 +457,160 @@
         public async Task<ActionResult> Save(Product NewProduct)
         {
             await this.productRepository.AddProduct(NewProduct);
+
+            return RedirectToAction("Index");
+        }
+    }
+    ```
+
+## Adding delete functionality
+
+ - *Step 1 :* Update `index.cshtml`
+
+    ```cshtml
+    @model ProductsSolution.AppModels.App;
+    @{
+        ViewData["Title"] = "Home Page";
+    }
+
+    <a class="btn btn-primary" asp-area="" asp-controller="Home" asp-action="EditScreen">Add Product</a>
+
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Product Name</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(ProductsSolution.Models.Product product in Model.Products){
+                <tr>
+                    <td>
+                        <form asp-action="Delete" method="post" style="display:inline;">
+                            <input type="hidden" name="id" value="@product.Id" />
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </td>
+                    <td>@product.Name</td>
+                    <td>@product.Price</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    ```
+ - *Step 2 :* Update `IProductRepository.cs`
+
+    ```cs
+    // Interfaces/IProductRepository.cs
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using ProductsSolution.Models;
+
+    namespace ProductsSolution.Interfaces
+    {
+        public interface IProductRepository
+        {
+            // this is an interface to get all products
+            Task<IEnumerable<Product>> GetAllProducts();
+
+            // Add Interface to Add new product
+            Task AddProduct(Product product);
+            
+            // Add Interface to delete product
+            Task DeleteProduct(int id);
+        }
+    }
+    ```
+
+ - *Step 3 :* Update `ProductRepository.cs`
+
+    ```cs
+    // Repositories/ProductRepository.cs
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Microsoft.EntityFrameworkCore;
+    using ProductsSolution.Data;
+    using ProductsSolution.Interfaces;
+    using ProductsSolution.Models;
+
+    namespace ProductsSolution.Repositories
+    {
+        public class ProductRepository : IProductRepository
+        {
+            private readonly AppDbContext _context;
+
+            public ProductRepository(AppDbContext context)
+            {
+                _context = context;
+            }
+
+            public async Task<IEnumerable<Product>> GetAllProducts()
+            {
+                return await _context.Products.ToListAsync();
+            }
+
+            public async Task AddProduct(Product product)
+            {
+                _context.Products.Add(product);
+                await _context.SaveChangesAsync();
+            }
+            
+            public async Task DeleteProduct(int id)
+            {
+                var product = await _context.Products.FindAsync(id);
+                if (product != null)
+                {
+                    _context.Products.Remove(product);
+                    await _context.SaveChangesAsync();
+                }
+            }
+        }
+    }
+    ```
+
+ - *Step 4 :* Update `HomeController.cs`
+
+    ```cs
+    using Microsoft.AspNetCore.Mvc;
+    using ProductsSolution.Interfaces;
+    using ProductsSolution.AppModels;
+    using ProductsSolution.Models;
+
+    namespace ProductsSolution.Controllers;
+
+    public class HomeController : Controller
+    {
+        private readonly IProductRepository productRepository;
+
+        public HomeController(IProductRepository productRepository){
+            this.productRepository = productRepository;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            App app = new App();
+            app.Products = await this.productRepository.GetAllProducts();
+            return View(app);
+        }
+
+        public IActionResult EditScreen()
+        {
+            App app = new App();
+            return View(app);
+        }
+
+        [HttpPost, ActionName("Save")]
+        public async Task<ActionResult> Save(Product NewProduct)
+        {
+            await this.productRepository.AddProduct(NewProduct);
+
+            return RedirectToAction("Index");
+        }
+        [HttpPost, ActionName("Delete")]
+        public async Task<ActionResult> Delete(int id)
+        {
+            await this.productRepository.DeleteProduct(id);
 
             return RedirectToAction("Index");
         }
