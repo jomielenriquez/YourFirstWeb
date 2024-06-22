@@ -622,3 +622,9 @@
     ```bash
     dotnet publish -c Release -o ./publish
     ```
+
+## Sommee connection String
+
+```
+workstation id=SampleLangDB.mssql.somee.com;packet size=4096;user id=SSFBC_SQLLogin_1;pwd=tixka25ru2;data source=SampleLangDB.mssql.somee.com;persist security info=False;initial catalog=SampleLangDB;TrustServerCertificate=True
+```
